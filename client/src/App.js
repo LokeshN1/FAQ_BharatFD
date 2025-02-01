@@ -1,25 +1,20 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import FaqList from './components/faqList';
+import FAQEditor from './components/FAQEditor';
+import FaqDetail from './components/faqDetails';
 
-function App() {
+const App = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<FaqList />} />
+        <Route path="/faq/:id" element={<FaqDetail />} />
+        <Route path="/create-faq" element={<FAQEditor />} />
+        <Route path="/edit-faq/:id" element={<FAQEditor />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;

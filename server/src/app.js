@@ -6,8 +6,10 @@ dotenv.config({ path: './src/.env' });
 
 import mongoose from 'mongoose';
 import { connectDB } from "./lib/db.js";
+import cors from "cors";
 
-import faqRoutes from './routes/faq.routes.js'
+
+import faqRoutes from './routes/faq.Routes.js'
 // console.log("Dotenv Loaded:", process.env);
 
 const app = express();
@@ -16,6 +18,12 @@ console.log(process.env.PORT);
 
 // Middleware to parse JSON
 app.use(express.json());
+
+
+app.use(cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+}));
 
 // FAQ routes
 app.use('/api', faqRoutes);
