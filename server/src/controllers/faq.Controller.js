@@ -1,41 +1,62 @@
-import Faq from "../model/faq.model.js"; // Path to your model
+import Faq from "../model/faq.model.js";
+import translate from "google-translate-api-x"; // Google Translate API
 
-
-
-// GET all FAQs
-export const getAllFaqs = async (req, res) => {
+// Function to translate text dynamically
+const translateText = async (text, targetLang) => {
+  if (!text || targetLang === "en") return text; // Return original if no text or English requested
   try {
-    const lang = req.query.lang || 'en'; // Default to English if lang is not provided
-    const faqs = await Faq.find({});
-    const translatedFaqs = faqs.map(faq => {
-      return {
-        ...faq._doc,
-        question: faq.translations.find(t => t.lang === lang)?.question || faq.question,
-        answer: faq.translations.find(t => t.lang === lang)?.answer || faq.answer,
-      };
-    });
-    res.status(200).json(translatedFaqs);
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching FAQs', error: err.message });
+    const translated = await translate(text, { to: targetLang });
+    return translated.text;
+  } catch (error) {
+    console.error("Translation error:", error);
+    return text; // Fallback to original text in case of error
   }
 };
 
-// GET single FAQ by ID
+// GET all FAQs with optional translation
+export const getAllFaqs = async (req, res) => {
+  try {
+    const lang = req.query.lang || "en";
+    const faqs = await Faq.find({});
+
+    const translatedFaqs = await Promise.all(
+      faqs.map(async (faq) => {
+        const storedTranslation = faq.translations.find((t) => t.lang === lang);
+        
+        return {
+          ...faq._doc,
+          question: storedTranslation?.question || (await translateText(faq.question, lang)),
+          answer: storedTranslation?.answer || (await translateText(faq.answer, lang)),
+        };
+      })
+    );
+
+    res.status(200).json(translatedFaqs);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching FAQs", error: err.message });
+  }
+};
+
+// GET single FAQ by ID with optional translation
 export const getFaqById = async (req, res) => {
   try {
     const faq = await Faq.findById(req.params.id);
     if (!faq) {
-      return res.status(404).json({ message: 'FAQ not found' });
+      return res.status(404).json({ message: "FAQ not found" });
     }
-    const lang = req.query.lang || 'en';
+
+    const lang = req.query.lang || "en";
+    const storedTranslation = faq.translations.find((t) => t.lang === lang);
+
     const translatedFaq = {
       ...faq._doc,
-      question: faq.translations.find(t => t.lang === lang)?.question || faq.question,
-      answer: faq.translations.find(t => t.lang === lang)?.answer || faq.answer,
+      question: storedTranslation?.question || (await translateText(faq.question, lang)),
+      answer: storedTranslation?.answer || (await translateText(faq.answer, lang)),
     };
+
     res.status(200).json(translatedFaq);
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching FAQ', error: err.message });
+    res.status(500).json({ message: "Error fetching FAQ", error: err.message });
   }
 };
 
@@ -43,15 +64,17 @@ export const getFaqById = async (req, res) => {
 export const createFaq = async (req, res) => {
   try {
     const { question, answer, translations } = req.body;
-    const newFaq = new Faq({
-      question,
-      answer,
-      translations,
-    });
+
+    if (!question || !answer) {
+      return res.status(400).json({ message: "Question and answer are required" });
+    }
+
+    const newFaq = new Faq({ question, answer, translations });
     await newFaq.save();
-    res.status(201).json(newFaq);
+
+    res.status(201).json({ message: "FAQ created successfully", faq: newFaq });
   } catch (err) {
-    res.status(500).json({ message: 'Error creating FAQ', error: err.message });
+    res.status(500).json({ message: "Error creating FAQ", error: err.message });
   }
 };
 
@@ -59,17 +82,25 @@ export const createFaq = async (req, res) => {
 export const updateFaq = async (req, res) => {
   try {
     const { question, answer, translations } = req.body;
-    const updatedFaq = await Faq.findByIdAndUpdate(
-      req.params.id,
-      { question, answer, translations },
-      { new: true }
-    );
-    if (!updatedFaq) {
-      return res.status(404).json({ message: 'FAQ not found' });
+    const faqId = req.params.id;
+
+    if (!question || !answer) {
+      return res.status(400).json({ message: "Question and answer are required" });
     }
-    res.status(200).json(updatedFaq);
+
+    const updatedFaq = await Faq.findByIdAndUpdate(
+      faqId,
+      { question, answer, translations },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedFaq) {
+      return res.status(404).json({ message: "FAQ not found" });
+    }
+
+    res.status(200).json({ message: "FAQ updated successfully", faq: updatedFaq });
   } catch (err) {
-    res.status(500).json({ message: 'Error updating FAQ', error: err.message });
+    res.status(500).json({ message: "Error updating FAQ", error: err.message });
   }
 };
 
@@ -78,11 +109,11 @@ export const deleteFaq = async (req, res) => {
   try {
     const deletedFaq = await Faq.findByIdAndDelete(req.params.id);
     if (!deletedFaq) {
-      return res.status(404).json({ message: 'FAQ not found' });
+      return res.status(404).json({ message: "FAQ not found" });
     }
-    res.status(200).json({ message: 'FAQ deleted successfully' });
+
+    res.status(200).json({ message: "FAQ deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: 'Error deleting FAQ', error: err.message });
+    res.status(500).json({ message: "Error deleting FAQ", error: err.message });
   }
 };
-
