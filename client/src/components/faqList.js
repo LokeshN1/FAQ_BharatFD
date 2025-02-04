@@ -1,58 +1,105 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { getAllFaqs, deleteFaq } from '../api/api.js';
-import DOMPurify from 'dompurify';
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/authStore.js";
+import { getAllFaqs, deleteFaq, adminLogout } from "../api/api.js";
 
 const FaqList = () => {
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const isAdminLoggedIn = useAuthStore((state) => state.isAdminLoggedIn);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
+  const login = useAuthStore((state) => state.login);
+  const logout = useAuthStore((state) => state.logout);
+
+  const navigate = useNavigate();
+
+  // Check admin authentication status and fetch FAQs
   useEffect(() => {
-    const fetchFaqs = async () => {
+    const fetchData = async () => {
+      await checkAuth(); // Check if admin is logged in
       try {
         const data = await getAllFaqs();
         setFaqs(data);
         setLoading(false);
       } catch (error) {
+        console.error("Error fetching FAQs:", error);
         setLoading(false);
       }
     };
 
-    fetchFaqs();
-  }, []);
+    fetchData();
+  }, [checkAuth]);
 
   const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this FAQ?")) return;
     try {
       await deleteFaq(id);
-      setFaqs(faqs.filter(faq => faq._id !== id));
+      setFaqs(faqs.filter((faq) => faq._id !== id));
     } catch (error) {
-      console.error('Error deleting FAQ');
+      console.error("Error deleting FAQ");
     }
   };
 
+  const handleLogout = async () => {
+    await adminLogout(); // Update Zustand store state
+    window.location.reload(); // Refresh the page to update the Zustand variables and UI
+  };
+
   return (
-    <div>
-      <h1>FAQs</h1>
+    <div className="container mt-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2 className="fw-bold">FAQs</h2>
+        {isAdminLoggedIn ? (
+          <>
+            <Link to="/create-faq" className="btn btn-primary">
+              + Create New FAQ
+            </Link>
+            <button className="btn btn-danger" onClick={handleLogout}>
+              Logout
+            </button>
+          </>
+        ) : (
+          <Link to="/admin-login" className="btn btn-success">
+            Login as Admin
+          </Link>
+        )}
+      </div>
+
       {loading ? (
-        <p>Loading...</p>
+        <p className="text-center">Loading...</p>
       ) : (
-        <ul>
-          {faqs.map(faq => (
-            <li key={faq._id}>
-              <h3>{faq.question}</h3>
-              <div
-                dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(faq.answer), // Sanitize and render HTML content safely
-                }}
-            />
-              <Link to={`/faq/${faq._id}`}>View Details</Link> | 
-              <Link to={`/edit-faq/${faq._id}`}>Edit</Link> | 
-              <button onClick={() => handleDelete(faq._id)}>Delete</button>
-            </li>
+        <div className="row">
+          {faqs.map((faq) => (
+            <div key={faq._id} className="col-md-6 mb-4">
+              <div className="card shadow-sm faq-card">
+                <div className="card-body">
+                  <h5 className="card-title">{faq.question}</h5>
+                  <hr />
+                  <div className="d-flex justify-content-between">
+                    <Link to={`/faq/${faq._id}`} className="btn btn-outline-primary btn-sm">
+                      View
+                    </Link>
+                    {isAdminLoggedIn && (
+                      <Link to={`/edit-faq/${faq._id}`} className="btn btn-outline-secondary btn-sm">
+                        Edit
+                      </Link>
+                    )}
+                    {isAdminLoggedIn && (
+                      <button
+                        className="btn btn-outline-danger btn-sm"
+                        onClick={() => handleDelete(faq._id)}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
-      <Link to="/create-faq">Create New FAQ</Link>
     </div>
   );
 };

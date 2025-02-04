@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import DOMPurify from "dompurify";
 import Select from "react-select";
+import "../assets/css/FaqDetail.css";
 
 const FaqDetail = () => {
   const { id } = useParams();
@@ -16,6 +17,10 @@ const FaqDetail = () => {
     { value: "hi", label: "Hindi" },
     { value: "bn", label: "Bengali" },
     { value: "es", label: "Spanish" },
+    { value: "fr", label: "French" },
+    { value: "de", label: "German" },
+    { value: "ur", label: "Urdu" },
+    { value: "ja", label: "Japanese" },
   ];
 
   useEffect(() => {
@@ -34,31 +39,35 @@ const FaqDetail = () => {
   };
 
   return (
-    <div>
-      {loading ? (
-        <p>Loading...</p>
-      ) : faq ? (
-        <div>
-          <h3>{faq.question}</h3>
-          <div
-            dangerouslySetInnerHTML={{
-              __html: DOMPurify.sanitize(faq.answer),
-            }}
-          />
-
-          {/* Language Selector */}
-          <div style={{ marginTop: "20px" }}>
-            <label>Select Language: </label>
-            <Select
-              options={languages}
-              value={selectedLang}
-              onChange={setSelectedLang}
+    <div className="faq-container">
+      <div className="faq-card">
+        {loading ? (
+          <p className="faq-loading">Loading...</p>
+        ) : faq ? (
+          <div>
+            <h2 className="faq-question">{faq.question}</h2>
+            <div
+              className="faq-answer"
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(faq.answer),
+              }}
             />
+
+            {/* Language Selector */}
+            <div className="faq-lang-selector">
+              <label>Select Language:</label>
+              <Select
+                options={languages}
+                value={selectedLang}
+                onChange={setSelectedLang}
+                className="faq-select"
+              />
+            </div>
           </div>
-        </div>
-      ) : (
-        <p>FAQ not found</p>
-      )}
+        ) : (
+          <p className="faq-not-found">FAQ not found</p>
+        )}
+      </div>
     </div>
   );
 };

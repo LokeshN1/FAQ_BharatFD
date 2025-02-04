@@ -1,0 +1,60 @@
+.faq-container {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    background-color: #f8f9fa; /* Bootstrap light background */
+  }
+  
+  .faq-card {
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #ffffff; /* Bootstrap white background */
+  }
+  
+  .faq-loading {
+    text-align: center;
+    font-size: 18px;
+    color: #6c757d; /* Bootstrap muted text */
+  }
+  
+  .faq-question {
+    text-align: center;
+    color: #343a40; /* Bootstrap dark text */
+    margin-bottom: 20px;
+  }
+  
+  .faq-answer {
+    padding: 10px 15px;
+    background-color: #f1f3f5; /* Light gray background */
+    border-radius: 8px;
+    color: #495057; /* Bootstrap secondary text */
+    line-height: 1.6;
+  }
+  
+  .faq-lang-selector {
+    margin-top: 30px;
+  }
+  
+  .faq-lang-selector label {
+    font-size: 16px;
+    color: #495057;
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: block;
+  }
+  
+  .faq-select .css-1s2u09g-control {
+    border-radius: 8px;
+    border-color: #ced4da; /* Bootstrap input border */
+  }
+  
+  .faq-not-found {
+    text-align: center;
+    font-size: 18px;
+    color: #e74c3c; /* Red text for errors */
+  }
+  
+

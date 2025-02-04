@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import cors from "cors";
 import faqRoutes from "./routes/faq.Routes.js";
 import { connectDB } from "./lib/db.js";
+import adminRoutes from "./routes/admin.routes.js"; // Correct import
+import cookieParser from "cookie-parser"; // Import cookie-parser
 
 dotenv.config({ path: "./src/.env" });
 
@@ -13,6 +15,7 @@ const PORT = process.env.PORT || 5000;
 
 
 // Middleware
+app.use(cookieParser()); // Add this before any route handlers
 app.use(express.json());
 app.use(
   cors({
@@ -23,6 +26,7 @@ app.use(
 
 // Routes
 app.use("/api", faqRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.get("/", (req, res) => {
   res.send("Hello from the FAQ API!");
@@ -31,5 +35,6 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   connectDB();
+
 });
 
