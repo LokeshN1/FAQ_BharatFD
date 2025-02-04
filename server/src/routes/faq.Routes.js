@@ -1,6 +1,6 @@
 import express from 'express';
 import { getAllFaqs, getFaqById, createFaq, updateFaq, deleteFaq } from '../controllers/faq.Controller.js';
-
+import { verifyAdmin } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
@@ -11,13 +11,13 @@ router.get('/faqs', getAllFaqs);
 router.get('/faqs/:id', getFaqById);
 
 // Create a new FAQ
-router.post('/faqs', createFaq);
+router.post('/faqs', verifyAdmin, createFaq);
 
 // Update an existing FAQ by ID
-router.put('/faqs/:id', updateFaq);
+router.put('/faqs/:id', verifyAdmin, updateFaq);
 
 // Delete a FAQ by ID
-router.delete('/faqs/:id', deleteFaq);
+router.delete('/faqs/:id', verifyAdmin, deleteFaq);
 
 export default router;
 
