@@ -1,12 +1,12 @@
 import Faq from "../model/faq.model.js";
-import translate from "google-translate-api-x"; // Google Translate API
 import { redisClient } from "../lib/redis.js";
+import { translateUsingGoogleAPI } from "../lib/googleTranslate.js"; // Import helper function
 
 // Function to get cached translation from Redis
 const getCachedTranslation = async (key) => {
   try {
+    if (!redisClient.isReady) throw new Error("Redis is not connected"); // Check Redis connection
     console.log(`🔍 Fetching key: "${key}"`);
-    
     const cachedValue = await redisClient.get(key);
 
     if (!cachedValue) {
@@ -15,51 +15,41 @@ const getCachedTranslation = async (key) => {
     }
 
     console.log(`Cache HIT -> Key: "${key}"`);
-    console.log(`Raw Value:`, cachedValue);
-
-    // Attempt to parse JSON
-    try {
-      return JSON.parse(cachedValue);
-    } catch (err) {
-      console.warn("Value is not valid JSON. Returning raw string.");
-      return cachedValue; // Fallback to plain string
-    }
+    return JSON.parse(cachedValue); // Parse JSON string to object
   } catch (err) {
-    console.error("Error fetching key:", err.message);
-    return null;
+    console.warn(`⚠️ Redis Error (Skipping Cache): ${err.message}`);
+    return null; // Fallback to no cache
   }
 };
-
 
 // Function to store translation in Redis
 const setCachedTranslation = async (key, value) => {
   try {
+    if (!redisClient.isReady) throw new Error("Redis is not connected"); // Check Redis connection
     const serializedValue = JSON.stringify(value); // Serialize object to JSON string
     await redisClient.set(key, serializedValue);
-    console.log(`Key "${key}" stored successfully!`);
-    // getCachedTranslation(key);
+    console.log(`✅ Key "${key}" stored successfully in Redis!`);
   } catch (err) {
-    console.error("Error storing key in Redis:", err.message);
+    console.warn(`⚠️ Redis Error (Skipping Cache Storage): ${err.message}`);
   }
 };
 
 
-
 // Function to translate text dynamically (Handles caching, DB check, and API translation)
-const translateText = async (faq, targetLang) => {
-  if (!faq || !targetLang || targetLang === "en") return faq;
+export const translateText = async (faq, targetLang) => {
+  if (!faq || !targetLang || targetLang === "en") return faq; // Return original FAQ if language is English
 
   const cacheKey = `faq:${faq._id}:${targetLang}`;
+
+  // Step 1: Try to fetch from Redis cache
   const cachedTranslation = await getCachedTranslation(cacheKey);
-  
   if (cachedTranslation) {
     console.log("✅ Cache HIT for", cacheKey);
     return cachedTranslation; // Return from cache
   }
 
-  // Step 1: Check if the requested language exists in stored translations
+  // Step 2: Check if the requested language exists in stored translations
   const storedTranslation = faq.translations.find((t) => t.lang === targetLang);
-
   if (storedTranslation) {
     console.log("📌 Using stored DB translation for", targetLang);
     return {
@@ -69,22 +59,21 @@ const translateText = async (faq, targetLang) => {
     };
   }
 
-  // Step 2: If no stored translation, fetch from Google Translate API
+  // Step 3: Translate using the Google Translate API
   try {
     console.log("🌍 Translating using Google API...");
     const translatedFaq = {
       _id: faq._id,
-      question: await translate(faq.question, { to: targetLang }).then(res => res.text),
-      answer: await translate(faq.answer, { to: targetLang }).then(res => res.text),
+      question: await translateUsingGoogleAPI(faq.question, targetLang),
+      answer: await translateUsingGoogleAPI(faq.answer, targetLang),
     };
 
-    // Step 3: Cache the newly translated FAQ in Redis for future use
+    // Step 4: Cache the newly translated FAQ in Redis for future use
     await setCachedTranslation(cacheKey, translatedFaq);
-    console.log("✅ Cached new translation for", cacheKey);
 
     return translatedFaq;
   } catch (error) {
-    console.error("🔴 Translation error:", error);
+    console.error("🔴 Translation error:", error.message);
     return {
       _id: faq._id,
       question: faq.question,
@@ -92,6 +81,7 @@ const translateText = async (faq, targetLang) => {
     };
   }
 };
+
 
 // GET single FAQ by ID
 export const getFaqById = async (req, res) => {
@@ -160,8 +150,8 @@ export const createFaq = async (req, res) => {
     // Step 2: Translate the question and answer into multiple languages
     const translations = await Promise.all(
       ["hi", "bn", "es"].map(async (lang) => {
-        const translatedQuestion = await translateText(savedFaq, lang);
-        const translatedAnswer = await translateText(savedFaq, lang);
+        const translatedQuestion = await translateUsingGoogleAPI(savedFaq, lang);
+        const translatedAnswer = await translateUsingGoogleAPI(savedFaq, lang);
         return { lang, question: translatedQuestion.question, answer: translatedAnswer.answer };
       })
     );
