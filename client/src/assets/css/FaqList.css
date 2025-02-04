@@ -1,0 +1,22 @@
+.container {
+    max-width: 900px;
+  }
+  
+  .faq-card {
+    border-radius: 10px;
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .faq-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .card-title {
+    font-weight: 600;
+  }
+  
+  .btn {
+    font-size: 14px;
+    padding: 5px 10px;
+  }
+  

@@ -1,37 +1,34 @@
 import React, { useState, useEffect } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css"; 
+import "../assets/css/FAQEditor.css"; 
+import { getFaqById, createFaq, updateFaq } from "../api/api.js"; // Import API functions
 
 const FAQEditor = () => {
-  const { id } = useParams(); // Get FAQ ID from URL
-  const navigate = useNavigate(); // For redirection
+  const { id } = useParams(); 
+  const navigate = useNavigate(); 
 
   const [faq, setFaq] = useState({
     question: "",
     answer: "",
-    translations: [], // Holds all pre-translated content
+    translations: [],
   });
-
-  const [selectedLang, setSelectedLang] = useState("en"); // Selected language
-  const [loading, setLoading] = useState(false); // Translation loading state
 
   useEffect(() => {
     if (id) {
       const fetchFaq = async () => {
         try {
-          const response = await axios.get(
-            `http://localhost:5000/api/faqs/${id}?lang=${selectedLang}`
-          );
-          setFaq(response.data);
+          const data = await getFaqById(id);
+          setFaq(data);
         } catch (error) {
           console.error("Error fetching FAQ:", error);
         }
       };
       fetchFaq();
     }
-  }, [id, selectedLang]);
+  }, [id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -42,53 +39,13 @@ const FAQEditor = () => {
     setFaq((prevFaq) => ({ ...prevFaq, answer: value }));
   };
 
-  const handleTranslationChange = (lang, field, value) => {
-    setFaq((prevFaq) => ({
-      ...prevFaq,
-      translations: prevFaq.translations.map((t) =>
-        t.lang === lang ? { ...t, [field]: value } : t
-      ),
-    }));
-  };
-
-  const handleLanguageChange = (lang) => {
-    setSelectedLang(lang);
-  };
-
-  const addTranslation = async (lang) => {
-    setLoading(true);
-    try {
-      const response = await axios.post("http://localhost:5000/api/faqs/translate", {
-        question: faq.question,
-        answer: faq.answer,
-        lang,
-      });
-
-      const newTranslation = {
-        lang,
-        question: response.data.translatedQuestion,
-        answer: response.data.translatedAnswer,
-      };
-
-      setFaq((prevFaq) => ({
-        ...prevFaq,
-        translations: [...prevFaq.translations, newTranslation],
-      }));
-      setSelectedLang(lang);
-    } catch (error) {
-      console.error("Error translating content:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (id) {
-        await axios.put(`http://localhost:5000/api/faqs/${id}`, faq);
+        await updateFaq(id, faq);
       } else {
-        await axios.post("http://localhost:5000/api/faqs", faq);
+        await createFaq(faq);
       }
       navigate("/");
     } catch (error) {
@@ -96,71 +53,58 @@ const FAQEditor = () => {
     }
   };
 
-  const currentTranslation = faq.translations.find((t) => t.lang === selectedLang);
+  const formatUrl = (url) => {
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      return `https://${url}`;
+    }
+    return url;
+  };
 
   return (
-    <div>
-      <h1>{id ? "Edit FAQ" : "Create FAQ"}</h1>
+    <div className="container mt-4">
+      <div className="card shadow-sm p-4">
+        <h2 className="text-center mb-4">{id ? "Edit FAQ" : "Create FAQ"}</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label">Question:</label>
+            <input
+              type="text"
+              className="form-control"
+              name="question"
+              value={faq.question}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
 
-      <div>
-        <button onClick={() => handleLanguageChange("en")}>English</button>
-        <button onClick={() => addTranslation("hi")}>
-          {loading && selectedLang === "hi" ? "Translating..." : "Add Hindi"}
-        </button>
-        <button onClick={() => addTranslation("bn")}>
-          {loading && selectedLang === "bn" ? "Translating..." : "Add Bengali"}
-        </button>
-        <button onClick={() => addTranslation("es")}>
-          {loading && selectedLang === "es" ? "Translating..." : "Add Spanish"}
-        </button>
+          <div className="mb-3">
+            <label className="form-label">Answer:</label>
+            <ReactQuill value={faq.answer} onChange={handleAnswerChange} required />
+          </div>
+
+          <div className="d-grid">
+            <button type="submit" className="btn btn-primary">
+              {id ? "Update FAQ" : "Create FAQ"}
+            </button>
+          </div>
+        </form>
+
+        {faq.answer && (
+          <div className="mt-4">
+            <h5>Preview:</h5>
+            <div
+              className="quill-content"
+              dangerouslySetInnerHTML={{
+                __html: faq.answer.replace(
+                  /<a href="(.*?)"/g,
+                  (match, url) =>
+                    `<a href="${formatUrl(url)}" target="_blank" rel="noopener noreferrer"`
+                ),
+              }}
+            />
+          </div>
+        )}
       </div>
-
-      <form onSubmit={handleSubmit}>
-        {selectedLang === "en" ? (
-          <>
-            <div>
-              <label>Question (English):</label>
-              <input
-                type="text"
-                name="question"
-                value={faq.question}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div>
-              <label>Answer (English):</label>
-              <ReactQuill value={faq.answer} onChange={handleAnswerChange} required />
-            </div>
-          </>
-        ) : currentTranslation ? (
-          <>
-            <div>
-              <label>{`Question (${selectedLang.toUpperCase()})`}</label>
-              <input
-                type="text"
-                value={currentTranslation.question}
-                onChange={(e) =>
-                  handleTranslationChange(selectedLang, "question", e.target.value)
-                }
-              />
-            </div>
-
-            <div>
-              <label>{`Answer (${selectedLang.toUpperCase()})`}</label>
-              <ReactQuill
-                value={currentTranslation.answer}
-                onChange={(value) =>
-                  handleTranslationChange(selectedLang, "answer", value)
-                }
-              />
-            </div>
-          </>
-        ) : null}
-
-        <button type="submit">{id ? "Update FAQ" : "Create FAQ"}</button>
-      </form>
     </div>
   );
 };
