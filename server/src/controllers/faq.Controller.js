@@ -189,49 +189,40 @@ export const updateFaq = async (req, res) => {
     faq.question = question;
     faq.answer = answer;
 
-    // Step 3: Update translations with fresh translations using Google Translate
-    await Promise.all(
-      ["hi", "bn", "es"].map(async (lang) => {
-        // Fetch new translations from Google Translate for each language
-        const translatedQuestion = await translate(faq.question, { to: lang }).then(res => res.text);
-        const translatedAnswer = await translate(faq.answer, { to: lang }).then(res => res.text);
-
-        // Find the existing translation for the language
-        const existingTranslation = faq.translations.find((t) => t.lang === lang);
-
-        if (existingTranslation) {
-          // Update the existing translation with the newly translated question and answer
-          existingTranslation.question = translatedQuestion;
-          existingTranslation.answer = translatedAnswer;
-        } else {
-          // If the translation does not exist, create a new one
-          faq.translations.push({
-            lang,
-            question: translatedQuestion,
-            answer: translatedAnswer,
-          });
-        }
-      })
-    );
-
-    // Step 4: Save the updated FAQ with new translations
+    // Step 3: Save the updated FAQ first (without translations)
     const updatedFaq = await faq.save();
-
     if (!updatedFaq) {
       return res.status(404).json({ message: "FAQ not found" });
     }
 
-    // Step 5: Invalidate the cache for the specific FAQ and all FAQs
-    await redisClient.del(`faq:${faqId}:*`);  // Remove specific FAQ cache
-    await redisClient.del(`faqs:*`);          // Remove the list of all FAQs from cache
+    // Step 4: Translate the updated question and answer for different languages
+    const translations = await Promise.all(
+      ["hi", "bn", "es"].map(async (lang) => {
+        const translatedQuestion = await translateUsingGoogleAPI(faq.question, lang);
+        const translatedAnswer = await translateUsingGoogleAPI(faq.answer, lang);
+        return {
+          lang,
+          question: translatedQuestion,
+          answer: translatedAnswer,
+        };
+      })
+    );
 
-    // Step 6: Return the updated FAQ response
+    // Step 5: Update the translations in the FAQ document
+    faq.translations = translations; // Assign the newly translated content to translations
+
+    // Step 6: Save the updated FAQ with new translations
+    await faq.save();
+
+    // Step 7: Return the updated FAQ response
     res.status(200).json({ message: "FAQ updated successfully", faq: updatedFaq });
   } catch (err) {
     console.error("🔴 Error updating FAQ:", err.message);
     res.status(500).json({ message: "Error updating FAQ", error: err.message });
   }
 };
+
+
 
 
 // DELETE FAQ
@@ -245,11 +236,8 @@ export const deleteFaq = async (req, res) => {
       return res.status(404).json({ message: "FAQ not found" });
     }
 
-    // Step 2: Invalidate the cache for the specific FAQ and all FAQs
-    await redisClient.del(`faq:${faqId}:*`);  // Remove the specific FAQ from the cache
-    await redisClient.del(`faqs:*`);          // Clear the cache for all FAQs
 
-    // Step 3: Return success message for deletion
+    // Step 2: Return success message for deletion
     res.status(200).json({ message: "FAQ deleted successfully" });
   } catch (err) {
     console.error("🔴 Error deleting FAQ:", err.message);
