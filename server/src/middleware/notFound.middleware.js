@@ -1,4 +1,4 @@
-// middleware/notFound.middleware.js
+//  middleware/notFound.middleware.js
 export const notFoundMiddleware = (req, res, next) => {
     const error = new Error(`Not Found - ${req.originalUrl}`);
     error.status = 404;
