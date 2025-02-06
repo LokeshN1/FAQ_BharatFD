@@ -3,11 +3,11 @@ import express from "express";
 import cors from "cors";
 import faqRoutes from "./routes/faq.Routes.js";
 import {connectDB} from "./lib/db.js";
-import adminRoutes from "./routes/admin.routes.js"; // Correct import
+import adminRoutes from "./routes/admin.Routes.js" // Correct import
 import cookieParser from "cookie-parser"; // Import cookie-parser
 import {errorHandler} from "./middleware/error.middleware.js";
 import {notFoundMiddleware} from "./middleware/notFound.middleware.js";
-dotenv.config({path: "./src/.env"});
+dotenv.config({path: "../.env"});
 
 const app = express();
 const PORT = process.env.PORT || 5000;
