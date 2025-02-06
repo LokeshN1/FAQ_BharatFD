@@ -1,0 +1,14 @@
+node_modules
+client/build
+client/dist
+client/.env
+server/.env
+*.log
+.git
+.vscode
+.idea
+client/dockerFile
+server/dockerFile
+server/test
+.eslintignore
+.eslintrc.json
