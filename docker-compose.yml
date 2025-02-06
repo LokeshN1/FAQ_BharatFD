@@ -1,0 +1,49 @@
+
+services:
+  server:
+    build:
+      context: ./server  # This points to the server directory
+      dockerfile: Dockerfile  # Ensure this matches the name of your Dockerfile
+    ports:
+      - "${PORT}:5000"  # Use the PORT from the .env file
+    env_file:
+      - ./.env  # Specify the path to your .env file
+    environment:
+      - REDIS_HOST=${REDIS_HOST}  # Use the REDIS_HOST from the .env file
+      - MONGO_URL=${MONGO_URL}  # Use the MONGO_URL from the .env file
+      - JWT_SECRET=${JWT_SECRET}  # Use the JWT_SECRET from the .env file
+      - NODE_ENV=${NODE_ENV}  # Use the NODE_ENV from the .env file
+      - REDIS_PORT=${REDIS_PORT}  # Use the REDIS_PORT from the .env file
+    depends_on:
+      - redis
+      - mongodb
+    command: >
+      sh -c "node initMongo.js && node src/app.js"
+
+  client:
+    build:
+      context: ./client  # This points to the client directory
+      dockerfile: Dockerfile  # Ensure this matches the name of your Dockerfile
+    ports:
+      - "3000:3000"  # Adjust as needed
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: lokesh
+      MONGO_INITDB_ROOT_PASSWORD: lokesh
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  redis-data:
+  mongo-data:
