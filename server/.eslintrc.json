@@ -1,0 +1,20 @@
+{
+    "env": {
+        "browser": true,
+        "commonjs": true,
+        "es2021": true
+    },
+    "extends": [
+        "google" // Keep only the Google style guide
+    ],
+    "parserOptions": {
+        "ecmaVersion": "latest",
+        "sourceType": "module" // Enable ES6 modules
+    },
+    "rules": {
+        "require-jsdoc": "off",
+        "quotes": ["error", "double"],
+        "semi": ["error", "always"],
+        "new-cap": ["error", { "newIsCap": false, "capIsNew": false }]
+    }
+}
