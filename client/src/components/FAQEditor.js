@@ -7,8 +7,8 @@ import "../assets/css/FAQEditor.css";
 import { getFaqById, createFaq, updateFaq } from "../api/api.js"; // Import API functions
 
 const FAQEditor = () => {
-  const { id } = useParams(); 
-  const navigate = useNavigate(); 
+  const { id } = useParams();
+  const navigate = useNavigate();
 
   const [faq, setFaq] = useState({
     question: "",
@@ -16,36 +16,51 @@ const FAQEditor = () => {
     translations: [],
   });
 
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     if (id) {
       const fetchFaq = async () => {
         try {
+          setLoading(true);
           const data = await getFaqById(id);
           setFaq(data);
         } catch (error) {
           console.error("Error fetching FAQ:", error);
+        } finally {
+          setLoading(false);
         }
       };
       fetchFaq();
     }
   }, [id]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFaq((prevFaq) => ({ ...prevFaq, [name]: value }));
+  const handleEditorChange = (field, value) => {
+    setFaq((prevFaq) => ({ ...prevFaq, [field]: value }));
   };
 
-  const handleAnswerChange = (value) => {
-    setFaq((prevFaq) => ({ ...prevFaq, answer: value }));
+  // Function to strip HTML tags
+  const stripHtmlTags = (html) => {
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return div.textContent || div.innerText || "";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      if (!faq.question || !faq.answer) {
+        alert("Both Question and Answer fields are required!");
+        return;
+      }
+      // Strip HTML tags from the question before saving
+      const plainTextQuestion = stripHtmlTags(faq.question);
+      const updatedFaq = { ...faq, question: plainTextQuestion };
+
       if (id) {
-        await updateFaq(id, faq);
+        await updateFaq(id, updatedFaq);
       } else {
-        await createFaq(faq);
+        await createFaq(updatedFaq);
       }
       navigate("/");
     } catch (error) {
@@ -60,50 +75,105 @@ const FAQEditor = () => {
     return url;
   };
 
+  const quillModules = {
+    toolbar: [
+      [{ font: [] }, { size: [] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ align: [] }],
+      ["link", "image", "video"],
+      ["clean"],
+    ],
+  };
+
+  const quillFormats = [
+    "font",
+    "size",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "align",
+    "link",
+    "image",
+    "video",
+  ];
+
   return (
     <div className="container mt-4">
       <div className="card shadow-sm p-4">
         <h2 className="text-center mb-4">{id ? "Edit FAQ" : "Create FAQ"}</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label className="form-label">Question:</label>
-            <input
-              type="text"
-              className="form-control"
-              name="question"
-              value={faq.question}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <label className="form-label">Question:</label>
+              <ReactQuill
+                value={faq.question}
+                onChange={(value) => handleEditorChange("question", value)}
+                modules={quillModules}
+                formats={quillFormats}
+                placeholder="Enter your question here..."
+                required
+              />
+            </div>
 
-          <div className="mb-3">
-            <label className="form-label">Answer:</label>
-            <ReactQuill value={faq.answer} onChange={handleAnswerChange} required />
-          </div>
+            <div className="mb-3">
+              <label className="form-label">Answer:</label>
+              <ReactQuill
+                value={faq.answer}
+                onChange={(value) => handleEditorChange("answer", value)}
+                modules={quillModules}
+                formats={quillFormats}
+                placeholder="Enter your answer here..."
+                required
+              />
+            </div>
 
-          <div className="d-grid">
-            <button type="submit" className="btn btn-primary">
-              {id ? "Update FAQ" : "Create FAQ"}
-            </button>
-          </div>
-        </form>
-
-        {faq.answer && (
-          <div className="mt-4">
-            <h5>Preview:</h5>
-            <div
-              className="quill-content"
-              dangerouslySetInnerHTML={{
-                __html: faq.answer.replace(
-                  /<a href="(.*?)"/g,
-                  (match, url) =>
-                    `<a href="${formatUrl(url)}" target="_blank" rel="noopener noreferrer"`
-                ),
-              }}
-            />
-          </div>
+            <div className="d-grid">
+              <button type="submit" className="btn btn-primary">
+                {id ? "Update FAQ" : "Create FAQ"}
+              </button>
+            </div>
+          </form>
         )}
+
+        <div className="mt-4">
+          {faq.question && (
+            <div className="mt-4">
+              <h5>Question Preview:</h5>
+              <div
+                className="quill-content"
+                dangerouslySetInnerHTML={{
+                  __html: faq.question.replace(
+                    /<a href="(.*?)"/g,
+                    (match, url) =>
+                      `<a href="${formatUrl(url)}" target="_blank" rel="noopener noreferrer"`
+                  ),
+                }}
+              />
+            </div>
+          )}
+
+          {faq.answer && (
+            <div className="mt-4">
+              <h5>Answer Preview:</h5>
+              <div
+                className="quill-content"
+                dangerouslySetInnerHTML={{
+                  __html: faq.answer.replace(
+                    /<a href="(.*?)"/g,
+                    (match, url) =>
+                      `<a href="${formatUrl(url)}" target="_blank" rel="noopener noreferrer"`
+                  ),
+                }}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
