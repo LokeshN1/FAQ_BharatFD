@@ -38,6 +38,37 @@ const FaqDetail = () => {
     setLoading(false);
   };
 
+  const formatUrl = (url) => {
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      return `https://${url}`;
+    }
+    return url;
+  };
+  
+  const sanitizeHtml = (html) => {
+    const sanitizedHtml = DOMPurify.sanitize(html, {
+      ADD_ATTR: ["target", "rel"],
+      FORBID_TAGS: ["style"],
+      FORBID_ATTR: ["style"],
+    });
+  
+    // Replace links with formatted URLs
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = sanitizedHtml;
+  
+    const links = tempDiv.getElementsByTagName("a");
+    for (let link of links) {
+      const href = link.getAttribute("href");
+      if (href) {
+        link.setAttribute("href", formatUrl(href));
+        link.setAttribute("target", "_blank"); // Ensure links open in a new tab
+        link.setAttribute("rel", "noopener noreferrer"); // Add security attributes
+      }
+    }
+  
+    return tempDiv.innerHTML;
+  };
+  
   return (
     <div className="faq-container">
       <div className="faq-card">
@@ -49,7 +80,7 @@ const FaqDetail = () => {
             <div
               className="faq-answer"
               dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(faq.answer),
+                __html: sanitizeHtml(faq.answer),
               }}
             />
 
