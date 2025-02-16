@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import faqRoutes from "./routes/faq.Routes.js";
@@ -7,6 +6,7 @@ import adminRoutes from "./routes/admin.Routes.js" // Correct import
 import cookieParser from "cookie-parser"; // Import cookie-parser
 import {errorHandler} from "./middleware/error.middleware.js";
 import {notFoundMiddleware} from "./middleware/notFound.middleware.js";
+import dotenv from 'dotenv';
 dotenv.config({path: "../.env"});
 
 const app = express();
@@ -18,12 +18,13 @@ app.use(cookieParser()); // Add this before any route handlers
 app.use(express.json());
 app.use(
     cors({
-      origin: "http://localhost:3000",
+      origin: process.env.REACT_APP_CLIENT_URL ? process.env.REACT_APP_CLIENT_URL : "http://localhost:3000",
       credentials: true,
     }),
 );
 
 // Routes
+console.log(process.env.REACT_APP_CLIENT_URL);
 app.use("/api", faqRoutes);
 app.use("/api/admin", adminRoutes);
 
