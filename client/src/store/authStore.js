@@ -1,6 +1,8 @@
 // src/store/authStore.js
 import {create} from "zustand";
 
+const BASE_URL = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : 'http://localhost:5000';
+
 export const useAuthStore = create((set, get) => ({
   // Initial state
   isAdminLoggedIn: false,
@@ -14,7 +16,7 @@ export const useAuthStore = create((set, get) => ({
   // Action to check authentication status
   checkAuth: async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/admin/check-auth", {
+      const response = await fetch(`${BASE_URL}/api/admin/check-auth`, {
         method: "GET",
         credentials: "include", // Include cookies for session
       });
