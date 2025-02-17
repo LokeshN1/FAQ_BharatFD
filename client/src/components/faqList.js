@@ -42,7 +42,7 @@ const FaqList = () => {
 
   const handleLogout = async () => {
     await logout(); // Call Zustand logout
-    navigate("/admin-login"); // Redirect after logout
+    navigate("/"); // Redirect after logout
   };
 
   return (
