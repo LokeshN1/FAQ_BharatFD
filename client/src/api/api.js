@@ -1,5 +1,7 @@
+// src/api/api.js
 import { axiosInstance } from "../lib/axios";
 
+// Fetch all FAQs
 export const getAllFaqs = async (lang = "en") => {
   try {
     const response = await axiosInstance.get(`/faqs?lang=${lang}`);
@@ -10,6 +12,7 @@ export const getAllFaqs = async (lang = "en") => {
   }
 };
 
+// Fetch single FAQ by ID
 export const getFaqById = async (id, lang = "en") => {
   try {
     const response = await axiosInstance.get(`/faqs/${id}?lang=${lang}`);
@@ -20,6 +23,7 @@ export const getFaqById = async (id, lang = "en") => {
   }
 };
 
+// Create a new FAQ
 export const createFaq = async (faqData) => {
   try {
     const response = await axiosInstance.post(`/faqs`, faqData);
@@ -30,6 +34,7 @@ export const createFaq = async (faqData) => {
   }
 };
 
+// Update an existing FAQ
 export const updateFaq = async (id, faqData) => {
   try {
     const response = await axiosInstance.put(`/faqs/${id}`, faqData);
@@ -40,6 +45,7 @@ export const updateFaq = async (id, faqData) => {
   }
 };
 
+// Delete an FAQ
 export const deleteFaq = async (id) => {
   try {
     const response = await axiosInstance.delete(`/faqs/${id}`);
@@ -50,9 +56,12 @@ export const deleteFaq = async (id) => {
   }
 };
 
+// Admin login
 export const adminLogin = async (credentials) => {
   try {
-    const response = await axiosInstance.post(`/admin/login`, credentials);
+    const response = await axiosInstance.post(`/admin/login`, credentials, {
+      withCredentials: true, 
+    });
     return response;
   } catch (error) {
     console.error("Error logging in as admin", error);
@@ -60,18 +69,24 @@ export const adminLogin = async (credentials) => {
   }
 };
 
-export const adminLogout = async() =>{
+
+// Admin logout (clears cookie)
+export const adminLogout = async () => {
   try {
     const response = await axiosInstance.post(`/admin/logout`);
-    console.log(response);
-    if (response.data.success) {
-      console.log("Logout successful:", response.data.message);
-      // Optionally, redirect the user or perform any additional actions on successful logout
-    } else {
-      console.error("Logout failed:", response.data.message);
-    }
-  
+    return response.data;
   } catch (error) {
     console.error("Logout error:", error.response ? error.response.data.message : error.message);
+    throw error;
   }
-}
+};
+
+// Check if admin is authenticated
+export const checkAdminAuth = async () => {
+  try {
+    return await axiosInstance.get(`/admin/check-auth`, { withCredentials: true });
+  } catch (error) {
+    console.error("Auth check failed:", error);
+    return error.response;
+  }
+};

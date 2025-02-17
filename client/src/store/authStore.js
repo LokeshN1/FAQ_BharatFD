@@ -1,37 +1,37 @@
 // src/store/authStore.js
-import {create} from "zustand";
+import { create } from "zustand";
+import { adminLogout, checkAdminAuth } from "../api/api";
 
-const BASE_URL = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : 'http://localhost:5000';
+const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-export const useAuthStore = create((set, get) => ({
-  // Initial state
+export const useAuthStore = create((set) => ({
   isAdminLoggedIn: false,
 
-  // Action to log in the admin
+  // Login function updates Zustand state
   login: () => set({ isAdminLoggedIn: true }),
 
-  // Action to log out the admin
-  logout: () => set({ isAdminLoggedIn: false }),
+  // Logout function calls API & updates Zustand state
+  logout: async () => {
+    try {
+      await adminLogout();
+      set({ isAdminLoggedIn: false });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  },
 
-  // Action to check authentication status
+  // Check authentication status from API
   checkAuth: async () => {
     try {
-      const response = await fetch(`${BASE_URL}/api/admin/check-auth`, {
-        method: "GET",
-        credentials: "include", // Include cookies for session
-      });
-      if (response.ok) {
-        const data = await response.json(); // Parse the JSON
-        console.log("Auth Check Response:", data); // Debug response
+      const response = await checkAdminAuth();
+      if (response.status === 200) {
         set({ isAdminLoggedIn: true });
       } else {
-        console.log("Auth Check Failed:", response.status);
         set({ isAdminLoggedIn: false });
       }
     } catch (error) {
-      console.error("Error checking auth status:", error);
       set({ isAdminLoggedIn: false });
+      console.error("Auth check error:", error);
     }
   },
-  
 }));

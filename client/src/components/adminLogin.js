@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminLogin } from "../api/api.js";
+import { useAuthStore } from "../store/authStore.js";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -8,15 +9,19 @@ const AdminLogin = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  const login = useAuthStore((state) => state.login); // Zustand login action
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await adminLogin({ email, password }); // Send the request to backend
+      const response = await adminLogin({ email, password }); // Send request to backend
+
       if (response.status === 200) {
+        login(); //  Update Zustand state
         navigate("/"); // Redirect to FAQ list page after successful login
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong");
+      setError(err.response?.data?.message || "Invalid credentials. Please try again.");
     }
   };
 
