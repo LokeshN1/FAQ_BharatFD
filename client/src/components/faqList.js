@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore.js";
-import { getAllFaqs, deleteFaq, adminLogout } from "../api/api.js";
+import { getAllFaqs, deleteFaq } from "../api/api.js";
 
 const FaqList = () => {
   const [faqs, setFaqs] = useState([]);
@@ -9,7 +9,6 @@ const FaqList = () => {
 
   const isAdminLoggedIn = useAuthStore((state) => state.isAdminLoggedIn);
   const checkAuth = useAuthStore((state) => state.checkAuth);
-  const login = useAuthStore((state) => state.login);
   const logout = useAuthStore((state) => state.logout);
 
   const navigate = useNavigate();
@@ -21,9 +20,9 @@ const FaqList = () => {
       try {
         const data = await getAllFaqs();
         setFaqs(data);
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching FAQs:", error);
+      } finally {
         setLoading(false);
       }
     };
@@ -42,8 +41,8 @@ const FaqList = () => {
   };
 
   const handleLogout = async () => {
-    await adminLogout(); // Update Zustand store state
-    window.location.reload(); // Refresh the page to update the Zustand variables and UI
+    await logout(); // Call Zustand logout
+    navigate("/admin-login"); // Redirect after logout
   };
 
   return (
