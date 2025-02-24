@@ -1,24 +1,35 @@
-import redis from "redis";
+import { createClient } from 'redis';
+import dotenv from 'dotenv';
 
-//  Configure Redis
-const redisClient = redis.createClient({
-  socket: {
-    host: process.env.REDIS_HOST || "127.0.0.1",
-    port: process.env.REDIS_PORT || 6379,
-  },
+// Load environment variables
+dotenv.config();
+
+// Create Redis client
+const redisClient = createClient({
+    url: process.env.REDIS_URL
 });
 
-redisClient
-    .connect()
-    .then(() => console.log("Redis Connected"))
-    .catch((err) => console.error("Redis Connection Failed:", err.message));
+// Event listeners for connection status
+redisClient.on('error', err => console.error('❌ Redis Client Error:', err));
+redisClient.on('connect', () => console.log('✅ Connected to Redis Cloud'));
 
-// ✅ Graceful shutdown
-process.on("SIGINT", async () => {
-  console.log("Closing Redis connection...");
-  await redisClient.quit();
-  process.exit(0);
+// Connect to Redis
+const connectRedis = async () => {
+    try {
+        await redisClient.connect();
+    } catch (err) {
+        console.error('❌ Failed to connect to Redis:', err);
+    }
+};
+
+// Graceful shutdown for Redis
+process.on('SIGINT', async () => {
+    console.log('Closing Redis connection...');
+    await redisClient.quit();
+    process.exit(0);
 });
 
-// Export Redis client for reuse
-export {redisClient};
+// Connect Redis when the app starts
+connectRedis();
+
+export { redisClient };

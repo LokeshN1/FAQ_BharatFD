@@ -18,7 +18,7 @@ const getCachedTranslation = async (key) => {
 const setCachedTranslation = async (key, value) => {
   try {
     if (!redisClient.isReady) throw new Error("Redis is not connected");
-    await redisClient.set(key, JSON.stringify(value));
+    await redisClient.set(key, JSON.stringify(value), "EX", 3600); // 3600 seconds = 1 hour
   } catch (err) {
     console.warn(`⚠️ Redis Error: ${err.message}`);
   }
