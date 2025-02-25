@@ -23,3 +23,6 @@ Thumbs.db
 .vscode/
 *.sublime-workspace
 *.sublime-project
+
+
+googleCredentials.json

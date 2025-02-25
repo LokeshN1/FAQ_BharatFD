@@ -5,6 +5,7 @@ export const translateUsingGoogleAPI = async (text, targetLang) => {
     if (!text || !targetLang || targetLang === "en") {
       return text;
     }
+    console.log("Using google Translation API");
 
     console.log(`Translating: "${text}" -> "${targetLang}"`);
     const result = await translate(text, {to: targetLang});
