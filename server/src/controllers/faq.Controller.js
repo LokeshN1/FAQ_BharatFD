@@ -31,7 +31,7 @@ export const translateText = async (faq, targetLang) => {
   const cacheKey = `faq:${faq._id}:${targetLang}`;
   const cachedTranslation = await getCachedTranslation(cacheKey);
   if (cachedTranslation) {
-    console.log("Recived Translation from Redis cahce : "+cachedTranslation.translatedFaq);
+    console.log("Redis Cache Translation:", JSON.stringify(cachedTranslation, null, 2));
     return cachedTranslation;
   }
 
